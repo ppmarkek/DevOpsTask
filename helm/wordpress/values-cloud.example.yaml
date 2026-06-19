@@ -1,0 +1,25 @@
+# Cloud deployment example (DigitalOcean DOKS + Managed MySQL via Terraform).
+# Apply after: terraform apply in terraform/envs/dev or terraform/envs/prod
+#
+# helm upgrade --install wp-prod helm/wordpress \
+#   -f helm/wordpress/values-prod.yaml \
+#   -f helm/wordpress/values-cloud.example.yaml \
+#   --set wordpress.db.host=<terraform output database_host> \
+#   --set wordpress.existingSecret=wp-prod-db-credentials
+
+standaloneMariadb:
+  enabled: false
+
+wordpress:
+  db:
+    host: ""  # e.g. private-db-host.db.ondigitalocean.com
+    password: ""  # inject via existingSecret, not values
+
+persistence:
+  storageClass: do-block-storage
+  accessMode: ReadWriteMany  # use DO Spaces / NFS in real prod; block storage is RWO only
+
+image:
+  pullPolicy: Always
+  pullSecrets:
+    - ghcr-credentials

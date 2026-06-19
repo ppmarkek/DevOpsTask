@@ -7,6 +7,9 @@ $Context = "kind-wp-dev"
 
 & (Join-Path $RootDir "scripts\argocd-install.ps1") -Context $Context
 
+Write-Host "==> Bootstrapping database credentials..."
+& (Join-Path $RootDir "scripts\bootstrap-secrets.ps1") -SecretName "wp-dev-db-credentials" -Context $Context
+
 Write-Host "==> Applying Argo CD Application (wp-dev)..."
 kubectl apply -f (Join-Path $RootDir "argocd\applications\dev.yaml")
 
@@ -26,6 +29,6 @@ if ($secret) {
     Write-Host " Login:  admin / $password"
     Write-Host " Site:   http://dev.wordpress.local:8081"
     Write-Host ""
-    Write-Host " GitOps: push to 'develop' -> Argo syncs wp-dev"
+    Write-Host " GitOps: push to 'develop' -> CI pushes GHCR -> Image Updater syncs wp-dev"
     Write-Host "============================================"
 }

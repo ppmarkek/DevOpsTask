@@ -13,9 +13,9 @@ Operational guide for the WordPress-on-Kubernetes demo stack.
 | Stop dev | `.\scripts\dev-down.ps1` |
 | Stop prod | `.\scripts\prod-down.ps1` |
 | Update hosts | `.\scripts\add-hosts.ps1` (as Administrator) |
-| Deploy dev image | `.\scripts\deploy-dev.ps1 -Repo ghcr.io/ppmarkek/devopstask/wordpress -Tag develop` |
-| Deploy prod image | `.\scripts\deploy-prod.ps1 -Repo ghcr.io/ppmarkek/devopstask/wordpress -Tag main` |
+| Bootstrap secrets | `.\scripts\bootstrap-secrets.ps1 -SecretName wp-dev-db-credentials -Context kind-wp-dev` |
 | Argo CD dev UI | `kubectl port-forward svc/argocd-server -n argocd 9090:443 --context kind-wp-dev` |
+| Local fallback deploy | `.\scripts\deploy-dev.ps1 -UseLocalImage` (only without Argo CD) |
 
 ---
 
@@ -78,7 +78,14 @@ Expected:
 - All WordPress and MariaDB pods: `1/1 Running`
 - HPA: shows current/target CPU and replica count
 - PDB: `minAvailable` configured
-- PVC `wp-wordpress-uploads`: `Bound`, access mode `RWX`
+- PVC `wp-dev-wordpress-uploads` (dev) or `wp-wordpress-uploads` (local): `Bound`, access mode `RWX`
+
+Verify environment header:
+
+```powershell
+Invoke-WebRequest -Uri "http://dev.wordpress.local:8081" -UseBasicParsing | Select-Object -ExpandProperty Headers
+# X-DevOps-Env: development
+```
 
 ---
 
@@ -96,9 +103,10 @@ kubectl get events --sort-by='.lastTimestamp'
 | Symptom | Cause | Fix |
 |---|---|---|
 | PVC Pending | Storage class missing | Run `.\scripts\install-kind-rwx.ps1` |
-| PVC Terminating | Old volume still mounted | `kubectl scale deployment wp-wordpress --replicas=0`, delete PVC, `helm upgrade` |
-| ImagePullBackOff | Image not in kind | `kind load docker-image wordpress-devops:local --name devops-wp` |
-| ImagePullBackOff (GHCR) | Private package | Make GHCR package public or add `imagePullSecrets` |
+| PVC Terminating | Old volume still mounted | `kubectl scale deployment wp-dev-wordpress --replicas=0`, delete PVC, `helm upgrade` |
+| ImagePullBackOff | Image not in kind | `kind load docker-image wordpress-devops:dev --name wp-dev` |
+| ImagePullBackOff (GHCR) | Private package | Set `GHCR_TOKEN` and re-run `argocd-install.ps1`, or make GHCR package public |
+| CreateContainerConfigError | DB secret missing | Run `.\scripts\bootstrap-secrets.ps1 -SecretName wp-dev-db-credentials -Context kind-wp-dev` |
 
 ### WordPress `CrashLoopBackOff`
 
@@ -108,6 +116,8 @@ Database not ready yet. Wait for MariaDB pod to be `Running`, then WordPress sho
 kubectl logs deploy/wp-dev-mariadb
 kubectl logs deploy/wp-dev-wordpress
 ```
+
+If MariaDB is up but WordPress readiness fails, check DB credentials Secret keys: `mariadb-root-password`, `mariadb-password`, `db-password`.
 
 ### Site not loading in browser
 
@@ -136,8 +146,8 @@ kubectl logs deploy/wp-dev-wordpress
 Cannot change PVC access mode in place.
 
 ```powershell
-kubectl scale deployment wp-wordpress --replicas=0
-kubectl delete pvc wp-wordpress-uploads
+kubectl scale deployment wp-dev-wordpress --replicas=0
+kubectl delete pvc wp-dev-wordpress-uploads
 helm upgrade wp-dev helm/wordpress -f helm/wordpress/values-dev.yaml
 ```
 
@@ -168,6 +178,31 @@ Wait 1–2 minutes for metrics-server. On kind, metrics-server is included by de
 2. Check repo branch exists (`develop` / `main` pushed to GitHub)
 3. Check Application logs in UI
 
+### Image Updater not deploying new tags
+
+1. Check Image Updater logs:
+
+   ```powershell
+   kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater --tail=100
+   ```
+
+2. Verify GHCR tag exists (`develop`, `dev-<sha>`, `main`, or `prod-<sha>`).
+
+3. For private GHCR, set `GHCR_TOKEN` and re-run `argocd-install.ps1`.
+
+4. For git write-back, configure PAT:
+
+   ```powershell
+   $env:GITHUB_TOKEN = "<pat>"
+   .\scripts\argocd-configure-git-writeback.ps1 -Context kind-wp-dev
+   ```
+
+5. Check Application annotations in `argocd/applications/dev.yaml`.
+
+### Direct helm upgrade reverted by Argo CD
+
+Expected when Argo CD `selfHeal: true` is active. Use Git push → GHCR → Image Updater instead of `deploy-*.ps1`.
+
 ### GitHub Actions `repository name must be lowercase`
 
 GHCR requires lowercase image paths. Image must be `ghcr.io/ppmarkek/devopstask/wordpress`, not `DevOpsTask`.
@@ -176,7 +211,7 @@ GHCR requires lowercase image paths. Image must be `ghcr.io/ppmarkek/devopstask/
 
 ## Rollback
 
-### Helm rollback
+### Helm rollback (local / no Argo CD)
 
 ```powershell
 kubectl config use-context kind-wp-dev
@@ -188,21 +223,22 @@ helm rollback wp-dev <revision>
 
 In Argo CD UI → Application → **History and Rollback** → select previous revision.
 
+### Image rollback via Git
+
+Revert the commit where Image Updater changed `image.tag` in `values-dev.yaml` or `values-prod.yaml`. Argo CD syncs the previous tag.
+
 ---
 
 ## Deploying a new image version
 
-### Via CI (recommended)
+### Via CI + Image Updater (recommended)
 
 1. Push code to `develop` or `main`
-2. Wait for GitHub Actions to build and push to GHCR
-3. Argo CD auto-syncs, or run deploy script:
+2. Wait for `cd-dev.yml` / `cd-prod.yml` to push image to GHCR
+3. Image Updater detects new tag and updates Git (if write-back configured)
+4. Argo CD syncs the cluster automatically
 
-   ```powershell
-   .\scripts\deploy-dev.ps1 -Repo "ghcr.io/ppmarkek/devopstask/wordpress" -Tag "develop"
-   ```
-
-### Local image (no registry)
+### Local image (no registry, no Argo CD)
 
 ```powershell
 docker build -t wordpress-devops:dev -f docker/Dockerfile .
@@ -215,7 +251,7 @@ kind load docker-image wordpress-devops:dev --name wp-dev
 ## Verifying shared storage (RWX)
 
 ```powershell
-$pods = kubectl get pods -l app.kubernetes.io/name=wordpress -o jsonpath='{.items[*].metadata.name}'
+$pods = kubectl get pods -l app.kubernetes.io/instance=wp-dev -o jsonpath='{.items[*].metadata.name}'
 $p1, $p2 = $pods -split ' '
 kubectl exec $p1 -- sh -c "echo test-rwx > /var/www/html/wp-content/uploads/test.txt"
 kubectl exec $p2 -- cat /var/www/html/wp-content/uploads/test.txt
@@ -267,7 +303,7 @@ terraform destroy
 |---|---|
 | Local demo broken | Follow troubleshooting above |
 | Cloud deployment | Apply `terraform/` modules on DigitalOcean |
-| Security incident | Rotate DB passwords, regenerate Argo CD admin password |
+| Security incident | Rotate DB passwords via `bootstrap-secrets.ps1 -Force`, regenerate Argo CD admin password |
 
 ---
 

@@ -32,10 +32,22 @@ kubectl wait --namespace ingress-nginx \
 
 bash "$ROOT_DIR/scripts/install-kind-rwx.sh"
 
+bash "$ROOT_DIR/scripts/bootstrap-secrets.sh" wp-dev-db-credentials "$KUBE_CONTEXT"
+
 if helm status "$RELEASE_NAME" &>/dev/null; then
-  helm upgrade "$RELEASE_NAME" "$CHART_DIR" -f "$CHART_DIR/values-dev.yaml"
+  helm upgrade "$RELEASE_NAME" "$CHART_DIR" \
+    -f "$CHART_DIR/values-dev.yaml" \
+    --set image.repository=wordpress-devops \
+    --set image.tag=dev \
+    --set image.pullPolicy=Never \
+    --set-json 'image.pullSecrets=[]'
 else
-  helm install "$RELEASE_NAME" "$CHART_DIR" -f "$CHART_DIR/values-dev.yaml"
+  helm install "$RELEASE_NAME" "$CHART_DIR" \
+    -f "$CHART_DIR/values-dev.yaml" \
+    --set image.repository=wordpress-devops \
+    --set image.tag=dev \
+    --set image.pullPolicy=Never \
+    --set-json 'image.pullSecrets=[]'
 fi
 
 kubectl get pods

@@ -1,4 +1,5 @@
 {{- if .Values.standaloneMariadb.enabled }}
+{{- if include "wordpress.renderMariadbSecret" . }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -9,6 +10,8 @@ type: Opaque
 stringData:
   mariadb-root-password: {{ .Values.standaloneMariadb.rootPassword | quote }}
   mariadb-password: {{ .Values.standaloneMariadb.password | quote }}
+  db-password: {{ .Values.standaloneMariadb.password | quote }}
+{{- end }}
 {{- if .Values.standaloneMariadb.persistence.enabled }}
 ---
 apiVersion: v1
@@ -75,7 +78,7 @@ spec:
             - name: MARIADB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-mariadb
+                  name: {{ include "wordpress.mariadbSecretName" . }}
                   key: mariadb-root-password
             - name: MARIADB_DATABASE
               value: {{ .Values.wordpress.db.name | quote }}
@@ -84,13 +87,22 @@ spec:
             - name: MARIADB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-mariadb
+                  name: {{ include "wordpress.mariadbSecretName" . }}
                   key: mariadb-password
           {{- if .Values.standaloneMariadb.persistence.enabled }}
           volumeMounts:
             - name: data
               mountPath: /var/lib/mysql
           {{- end }}
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mariadb-admin ping -uroot -p"$MARIADB_ROOT_PASSWORD"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
           readinessProbe:
             exec:
               command:
@@ -107,6 +119,8 @@ spec:
                 - mariadb-admin ping -uroot -p"$MARIADB_ROOT_PASSWORD"
             initialDelaySeconds: 40
             periodSeconds: 10
+          resources:
+            {{- toYaml .Values.standaloneMariadb.resources | nindent 12 }}
       {{- if .Values.standaloneMariadb.persistence.enabled }}
       volumes:
         - name: data

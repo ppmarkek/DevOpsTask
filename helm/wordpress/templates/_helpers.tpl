@@ -36,10 +36,40 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
 
+{{- define "wordpress.dbSecretName" -}}
+{{- if .Values.standaloneMariadb.existingSecret }}
+{{- .Values.standaloneMariadb.existingSecret }}
+{{- else if .Values.wordpress.existingSecret }}
+{{- .Values.wordpress.existingSecret }}
+{{- else }}
+{{- include "wordpress.fullname" . }}
+{{- end }}
+{{- end }}
+
+{{- define "wordpress.mariadbSecretName" -}}
+{{- if .Values.standaloneMariadb.existingSecret }}
+{{- .Values.standaloneMariadb.existingSecret }}
+{{- else }}
+{{- printf "%s-mariadb" .Release.Name }}
+{{- end }}
+{{- end }}
+
 {{- define "wordpress.dbPassword" -}}
 {{- if .Values.standaloneMariadb.enabled }}
 {{- .Values.standaloneMariadb.password }}
 {{- else }}
 {{- .Values.wordpress.db.password }}
+{{- end }}
+{{- end }}
+
+{{- define "wordpress.renderWordpressSecret" -}}
+{{- if and (not .Values.standaloneMariadb.existingSecret) (not .Values.wordpress.existingSecret) }}
+true
+{{- end }}
+{{- end }}
+
+{{- define "wordpress.renderMariadbSecret" -}}
+{{- if and .Values.standaloneMariadb.enabled (not .Values.standaloneMariadb.existingSecret) }}
+true
 {{- end }}
 {{- end }}

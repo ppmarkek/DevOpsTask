@@ -26,6 +26,7 @@ Thumbs.db
 
 # Helm
 helm/wordpress/charts/
+helm/wordpress/values-secrets.yaml
 *.tgz
 
 # Local cluster

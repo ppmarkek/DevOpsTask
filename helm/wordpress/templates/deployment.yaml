@@ -5,7 +5,11 @@ metadata:
   labels:
     {{- include "wordpress.labels" . | nindent 4 }}
 spec:
+  {{- if .Values.autoscaling.enabled }}
+  replicas: {{ .Values.autoscaling.minReplicas }}
+  {{- else }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "wordpress.selectorLabels" . | nindent 6 }}
@@ -14,6 +18,12 @@ spec:
       labels:
         {{- include "wordpress.selectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: wordpress
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -31,7 +41,7 @@ spec:
             - name: WORDPRESS_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "wordpress.fullname" . }}
+                  name: {{ include "wordpress.dbSecretName" . }}
                   key: db-password
             - name: WP_ENV
               valueFrom:
@@ -48,18 +58,27 @@ spec:
             - name: uploads
               mountPath: /var/www/html/wp-content/uploads
           {{- end }}
-          livenessProbe:
+          startupProbe:
             httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 60
-            periodSeconds: 10
+              path: {{ .Values.probes.startup.path }}
+              port: {{ .Values.probes.startup.port }}
+            initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
           readinessProbe:
             httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 5
+              path: {{ .Values.probes.readiness.path }}
+              port: {{ .Values.probes.readiness.port }}
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: {{ .Values.probes.liveness.port }}
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- if .Values.persistence.enabled }}

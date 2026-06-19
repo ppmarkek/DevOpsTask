@@ -34,6 +34,11 @@ jobs:
           helm template wp-local . -f values-local.yaml > /dev/null
           helm template wp-dev . -f values-dev.yaml > /dev/null
           helm template wp-prod . -f values-prod.yaml > /dev/null
+          helm template wp-dev . -f values-dev.yaml \
+            --set standaloneMariadb.existingSecret=wp-dev-db-credentials > /dev/null
+          helm template wp-prod . -f values-prod.yaml \
+            --set standaloneMariadb.existingSecret=wp-prod-db-credentials \
+            --set autoscaling.enabled=true > /dev/null
 
   docker:
     runs-on: ubuntu-latest

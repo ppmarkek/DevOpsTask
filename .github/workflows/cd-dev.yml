@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: Image tag to deploy (e.g. develop or sha-abc1234)
+        description: Optional extra tag suffix (defaults to branch name develop)
         required: false
         default: develop
 
@@ -14,31 +14,15 @@ permissions:
   contents: read
   packages: write
 
-env:
-  RELEASE_NAME: wp-dev
-  KUBE_CONTEXT: kind-wp-dev
-
 jobs:
   build-push:
     runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.tag.outputs.tag }}
-      image_name: ${{ steps.image.outputs.name }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Set lowercase image name
         id: image
         run: echo "name=$(echo 'ghcr.io/${{ github.repository }}/wordpress' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
-
-      - name: Set image tag
-        id: tag
-        run: |
-          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
-            echo "tag=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=develop" >> "$GITHUB_OUTPUT"
-          fi
 
       - uses: docker/setup-buildx-action@v3
 
@@ -55,19 +39,9 @@ jobs:
           file: docker/Dockerfile
           push: true
           tags: |
-            ${{ steps.image.outputs.name }}:${{ steps.tag.outputs.tag }}
+            ${{ steps.image.outputs.name }}:develop
             ${{ steps.image.outputs.name }}:dev-${{ github.sha }}
 
-  deploy:
-    needs: build-push
-    runs-on: self-hosted
-    if: always() && needs.build-push.result == 'success'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to dev
-        shell: pwsh
+      - name: Deployment note
         run: |
-          ./scripts/deploy-dev.ps1 `
-            -Repo "${{ needs.build-push.outputs.image_name }}" `
-            -Tag "${{ needs.build-push.outputs.image_tag }}"
+          echo "Image pushed to GHCR. Argo CD Image Updater on kind-wp-dev will detect the new tag and sync wp-dev."

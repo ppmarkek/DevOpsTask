@@ -3,15 +3,16 @@
 replicaCount: 2
 
 image:
-  repository: wordpress-devops
-  tag: dev
-  pullPolicy: Never
+  repository: ghcr.io/ppmarkek/devopstask/wordpress
+  tag: develop
+  pullPolicy: Always
+  pullSecrets:
+    - ghcr-credentials
 
 standaloneMariadb:
   enabled: true
   image: mariadb:11
-  rootPassword: dev-root
-  password: dev-wp
+  existingSecret: wp-dev-db-credentials
 
 ingress:
   enabled: true

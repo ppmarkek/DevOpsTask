@@ -36,12 +36,23 @@ kubectl wait --namespace ingress-nginx `
 Write-Host "==> Installing shared storage (RWX)..."
 & (Join-Path $RootDir "scripts\install-kind-rwx.ps1")
 
+Write-Host "==> Bootstrapping database credentials..."
+& (Join-Path $RootDir "scripts\bootstrap-secrets.ps1") -SecretName "wp-dev-db-credentials" -Context $KubeContext
+
 Write-Host "==> Helm install/upgrade..."
 $releaseExists = helm list -n default -q 2>$null | Where-Object { $_ -eq $ReleaseName }
+$helmArgs = @(
+    $ReleaseName, $ChartDir,
+    "-f", (Join-Path $ChartDir "values-dev.yaml"),
+    "--set", "image.repository=wordpress-devops",
+    "--set", "image.tag=dev",
+    "--set", "image.pullPolicy=Never",
+    "--set-json", "image.pullSecrets=[]"
+)
 if ($releaseExists) {
-    helm upgrade $ReleaseName $ChartDir -f (Join-Path $ChartDir "values-dev.yaml")
+    helm upgrade @helmArgs
 } else {
-    helm install $ReleaseName $ChartDir -f (Join-Path $ChartDir "values-dev.yaml")
+    helm install @helmArgs
 }
 
 Write-Host ""

@@ -4,16 +4,25 @@ image:
   repository: wordpress
   tag: latest
   pullPolicy: IfNotPresent
+  pullSecrets: []
 
 standaloneMariadb:
   enabled: true
   image: mariadb:11
+  existingSecret: ""
   rootPassword: changeme
   password: changeme
   persistence:
     enabled: true
     size: 8Gi
     storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 wordpress:
   db:
@@ -21,6 +30,7 @@ wordpress:
     name: wordpress
     user: wordpress
     password: ""
+  existingSecret: ""
 
 service:
   type: ClusterIP
@@ -50,6 +60,26 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
+
+probes:
+  startup:
+    path: /
+    port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 30
+  readiness:
+    path: /
+    port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 3
+  liveness:
+    path: /wp-includes/images/blank.gif
+    port: http
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    failureThreshold: 3
 
 env:
   WP_ENV: production
