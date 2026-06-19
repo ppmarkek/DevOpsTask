@@ -58,3 +58,7 @@ resources:
 env:
   WP_ENV: production
   WP_DEBUG: "false"
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1

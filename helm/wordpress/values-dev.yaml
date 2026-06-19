@@ -1,1 +1,44 @@
-# TODO: dev overrides
+# Dev environment — DigitalOcean
+
+replicaCount: 2
+
+image:
+  repository: registry.digitalocean.com/wp-devops/wordpress
+  tag: dev
+  pullPolicy: Always
+
+mariadb:
+  enabled: false
+
+standaloneMariadb:
+  enabled: false
+
+wordpress:
+  db:
+    host: ""        # set via --set or external secret after terraform apply
+    name: wordpress
+    user: wordpress
+    password: ""    # from terraform output database_password
+
+ingress:
+  enabled: true
+  className: nginx
+  host: dev.example.com   # replace with your domain
+
+persistence:
+  enabled: true
+  storageClass: do-block-storage
+  accessMode: ReadWriteOnce   # DO Block Storage is RWO; use Spaces/S3 for shared uploads in prod
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+env:
+  WP_ENV: development
+  WP_DEBUG: "true"

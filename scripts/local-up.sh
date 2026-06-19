@@ -28,6 +28,9 @@ kubectl wait --namespace ingress-nginx \
   --selector=app.kubernetes.io/component=controller \
   --timeout=120s
 
+echo "==> Installing shared storage (RWX for kind)..."
+bash "$ROOT_DIR/scripts/install-kind-rwx.sh"
+
 echo "==> Updating Helm dependencies..."
 helm dependency update "$CHART_DIR"
 

@@ -1,13 +1,10 @@
-# Local overrides for kind cluster
-
-replicaCount: 1
+replicaCount: 2
 
 image:
   repository: wordpress-devops
   tag: local
   pullPolicy: Never
 
-# Bitnami images often fail to pull — use official MariaDB for local
 mariadb:
   enabled: false
 
@@ -21,11 +18,18 @@ ingress:
   host: wordpress.local
 
 persistence:
-  storageClass: standard
+  storageClass: local-rwx
+  accessMode: ReadWriteMany
 
 autoscaling:
-  enabled: false
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
 
 env:
   WP_ENV: local
   WP_DEBUG: "true"
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

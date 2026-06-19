@@ -30,6 +30,9 @@ kubectl wait --namespace ingress-nginx `
     --selector=app.kubernetes.io/component=controller `
     --timeout=120s
 
+Write-Host "==> Installing shared storage (RWX for kind)..."
+& (Join-Path $RootDir "scripts\install-kind-rwx.ps1")
+
 Write-Host "==> Helm install/upgrade..."
 helm dependency update $ChartDir
 $status = helm status $ReleaseName 2>$null
