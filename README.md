@@ -19,51 +19,55 @@ Hosts (Administrator): `.\scripts\add-hosts.ps1`
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | PR / push | Helm lint + Docker build (+ push to GHCR on push) |
-| `cd-dev.yml` | push `develop` | Build → push `ghcr.io/.../wordpress:develop` → deploy dev |
-| `cd-prod.yml` | push `main` | Build → push `ghcr.io/.../wordpress:main` → deploy prod (approval) |
+| `cd-dev.yml` | push `develop` | Build → push image → deploy dev (self-hosted) |
+| `cd-prod.yml` | push `main` | Build → push image → deploy prod (self-hosted) |
 
-### What gets deployed automatically
-
-| Change | Path | How |
-|---|---|---|
-| PHP (themes, plugins) | `wordpress/wp-content/` | New Docker image |
-| WordPress config | `wordpress/config/wp-config-extra.php` | New Docker image |
-| Helm settings | `helm/wordpress/values-*.yaml` | `helm upgrade` |
-| Media uploads | `wp-content/uploads/` | PVC (not in image) |
-
-### Setup GitHub
-
-1. Push repo to GitHub
-2. Settings → Actions → General → **Read and write permissions** for `GITHUB_TOKEN`
-3. Settings → Actions → General → Workflow permissions: allow package publish
-4. Make package public: Profile → Packages → wordpress → Package settings → Public
-5. (Optional) Settings → Environments → create `production` with **Required reviewers**
-
-### Branch strategy
-
-```
-feature/* → PR → ci.yml
-develop   → cd-dev.yml (deploy dev)
-main      → cd-prod.yml (deploy prod)
-```
-
-### Deploy without self-hosted runner (local fallback)
-
-CI builds image on GitHub. Deploy manually:
+### Deploy manually (no self-hosted runner)
 
 ```powershell
-# After CI pushed image to GHCR:
 .\scripts\deploy-dev.ps1 -Repo "ghcr.io/ppmarkek/devopstask/wordpress" -Tag "develop"
 .\scripts\deploy-prod.ps1 -Repo "ghcr.io/ppmarkek/devopstask/wordpress" -Tag "main"
 ```
 
-### Full auto-deploy (self-hosted runner)
+## GitOps (Argo CD) — Step 6
 
-GitHub-hosted runners cannot reach local kind. For automatic deploy:
+Argo CD watches Git and syncs Helm chart to the cluster.
 
-1. GitHub → Settings → Actions → Runners → New self-hosted runner (Windows)
-2. Install runner on your PC (same machine as kind)
-3. `cd-dev.yml` / `cd-prod.yml` deploy jobs will run on it
+### Bootstrap
+
+```powershell
+# Dev cluster must be running: .\scripts\dev-up.ps1
+.\scripts\argocd-bootstrap-dev.ps1
+
+# Prod cluster: .\scripts\prod-up.ps1
+.\scripts\argocd-bootstrap-prod.ps1
+```
+
+### Argo CD UI
+
+```powershell
+# Dev (terminal 1)
+kubectl port-forward svc/argocd-server -n argocd 9090:443 --context kind-wp-dev
+
+# Prod (terminal 2)
+kubectl port-forward svc/argocd-server -n argocd 9091:443 --context kind-wp-prod
+```
+
+Open https://localhost:9090 — login `admin` + password from bootstrap output.
+
+### GitOps flow
+
+```
+1. Change code in wordpress/
+2. git push develop (or main)
+3. CI builds image → GHCR
+4. Argo CD detects Git/Helm changes → syncs cluster
+```
+
+| Branch | Argo Application | Cluster |
+|---|---|---|
+| `develop` | `wp-dev` | kind-wp-dev |
+| `main` | `wp-prod` | kind-wp-prod |
 
 ## Project structure
 

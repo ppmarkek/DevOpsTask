@@ -17,8 +17,13 @@ Terraform modules in `terraform/` target **DigitalOcean** for real cloud deploym
 
 - **GitHub Actions** — build image → GHCR
 - **Branches:** `develop` → dev, `main` → prod
-- **Deploy:** self-hosted runner or `scripts/deploy-*.ps1`
-- **Planned:** Argo CD GitOps (step 6)
+
+## GitOps (Argo CD)
+
+- **Dev:** `argocd/applications/dev.yaml` → cluster `kind-wp-dev`, branch `develop`
+- **Prod:** `argocd/applications/prod.yaml` → cluster `kind-wp-prod`, branch `main`
+- **Sync:** automated + selfHeal
+- **Bootstrap:** `scripts/argocd-bootstrap-dev.ps1`, `argocd-bootstrap-prod.ps1`
 
 ## Local (kind-devops-wp)
 

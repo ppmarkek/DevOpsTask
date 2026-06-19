@@ -1,1 +1,33 @@
-# TODO: Argo CD Application — dev
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wp-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ppmarkek/DevOpsTask.git
+    targetRevision: develop
+    path: helm/wordpress
+    helm:
+      valueFiles:
+        - values-dev.yaml
+      parameters:
+        - name: image.repository
+          value: ghcr.io/ppmarkek/devopstask/wordpress
+        - name: image.tag
+          value: develop
+        - name: image.pullPolicy
+          value: Always
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
