@@ -1,0 +1,85 @@
+{{- if .Values.standaloneMariadb.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-mariadb
+  labels:
+    {{- include "wordpress.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  mariadb-root-password: {{ .Values.standaloneMariadb.rootPassword | quote }}
+  mariadb-password: {{ .Values.standaloneMariadb.password | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mariadb
+  labels:
+    {{- include "wordpress.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: 3306
+      targetPort: mysql
+      name: mysql
+  selector:
+    app.kubernetes.io/component: mariadb
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mariadb
+  labels:
+    {{- include "wordpress.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mariadb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: mariadb
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: mariadb
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: mariadb
+          image: {{ .Values.standaloneMariadb.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: mysql
+              containerPort: 3306
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-mariadb
+                  key: mariadb-root-password
+            - name: MARIADB_DATABASE
+              value: {{ .Values.wordpress.db.name | quote }}
+            - name: MARIADB_USER
+              value: {{ .Values.wordpress.db.user | quote }}
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-mariadb
+                  key: mariadb-password
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mariadb-admin ping -uroot -p"$MARIADB_ROOT_PASSWORD"
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mariadb-admin ping -uroot -p"$MARIADB_ROOT_PASSWORD"
+            initialDelaySeconds: 40
+            periodSeconds: 10
+{{- end }}

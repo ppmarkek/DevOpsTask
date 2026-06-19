@@ -1,0 +1,31 @@
+# Local overrides for kind cluster
+
+replicaCount: 1
+
+image:
+  repository: wordpress-devops
+  tag: local
+  pullPolicy: Never
+
+# Bitnami images often fail to pull — use official MariaDB for local
+mariadb:
+  enabled: false
+
+standaloneMariadb:
+  enabled: true
+  image: mariadb:11
+  rootPassword: local-root
+  password: local-wp
+
+ingress:
+  host: wordpress.local
+
+persistence:
+  storageClass: standard
+
+autoscaling:
+  enabled: false
+
+env:
+  WP_ENV: local
+  WP_DEBUG: "true"

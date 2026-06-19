@@ -1,0 +1,32 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log
+
+# Secrets
+.env
+.env.*
+*.pem
+secrets/
+
+# WordPress runtime
+wordpress/wp-content/uploads/
+wordpress/wp-content/cache/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Helm
+helm/wordpress/charts/
+*.tgz
+
+# Local cluster
+kind-config.local.yaml

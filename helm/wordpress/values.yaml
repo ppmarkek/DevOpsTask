@@ -1,0 +1,60 @@
+replicaCount: 2
+
+image:
+  repository: wordpress
+  tag: latest
+  pullPolicy: IfNotPresent
+
+mariadb:
+  enabled: true
+  auth:
+    rootPassword: changeme
+    database: wordpress
+    username: wordpress
+    password: changeme
+
+standaloneMariadb:
+  enabled: false
+  image: mariadb:11
+  rootPassword: changeme
+  password: changeme
+
+wordpress:
+  db:
+    host: ""
+    name: wordpress
+    user: wordpress
+    password: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: wordpress.local
+
+persistence:
+  enabled: true
+  size: 5Gi
+  accessMode: ReadWriteOnce
+  storageClass: ""
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+env:
+  WP_ENV: production
+  WP_DEBUG: "false"
