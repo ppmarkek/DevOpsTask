@@ -53,8 +53,8 @@ CI builds image on GitHub. Deploy manually:
 
 ```powershell
 # After CI pushed image to GHCR:
-.\scripts\deploy-dev.ps1 -Repo "ghcr.io/YOUR_USER/DevOpsTask/wordpress" -Tag "develop"
-.\scripts\deploy-prod.ps1 -Repo "ghcr.io/YOUR_USER/DevOpsTask/wordpress" -Tag "main"
+.\scripts\deploy-dev.ps1 -Repo "ghcr.io/ppmarkek/devopstask/wordpress" -Tag "develop"
+.\scripts\deploy-prod.ps1 -Repo "ghcr.io/ppmarkek/devopstask/wordpress" -Tag "main"
 ```
 
 ### Full auto-deploy (self-hosted runner)
