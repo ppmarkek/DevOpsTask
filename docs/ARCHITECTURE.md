@@ -13,8 +13,12 @@ Terraform modules in `terraform/` target **DigitalOcean** for real cloud deploym
 ## Deploy
 
 - **Helm** — one chart, values per environment
-- **CI/CD** — GitHub Actions (planned)
-- **GitOps** — Argo CD (planned)
+## CI/CD
+
+- **GitHub Actions** — build image → GHCR
+- **Branches:** `develop` → dev, `main` → prod
+- **Deploy:** self-hosted runner or `scripts/deploy-*.ps1`
+- **Planned:** Argo CD GitOps (step 6)
 
 ## Local (kind-devops-wp)
 
