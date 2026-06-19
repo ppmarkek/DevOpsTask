@@ -18,6 +18,15 @@ if ($clusters -notcontains $ClusterName) {
     kind create cluster --name $ClusterName --config (Join-Path $RootDir "scripts\kind-config.yaml")
 } else {
     Write-Host "==> Kind cluster '$ClusterName' already exists."
+    $nodePorts = docker port "${ClusterName}-control-plane" 2>$null
+    if ($nodePorts -notmatch ":80/tcp") {
+        Write-Warning @"
+Kind cluster is missing host port 80 mapping (ingress will not work on http://wordpress.local).
+Recreate the cluster:
+  .\scripts\local-down.ps1
+  .\scripts\local-up.ps1
+"@
+    }
 }
 
 Write-Host "==> Loading image into kind..."
