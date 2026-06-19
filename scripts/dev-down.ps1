@@ -1,4 +1,4 @@
-# Stop dev environment — Windows PowerShell
+# Stop dev environment (Windows PowerShell)
 # Usage: .\scripts\dev-down.ps1
 
 $ClusterName = "wp-dev"

@@ -5,19 +5,15 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
-mariadb:
-  enabled: true
-  auth:
-    rootPassword: changeme
-    database: wordpress
-    username: wordpress
-    password: changeme
-
 standaloneMariadb:
-  enabled: false
+  enabled: true
   image: mariadb:11
   rootPassword: changeme
   password: changeme
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: ""
 
 wordpress:
   db:

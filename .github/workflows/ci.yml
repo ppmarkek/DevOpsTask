@@ -24,7 +24,6 @@ jobs:
       - name: Lint chart
         working-directory: helm/wordpress
         run: |
-          helm dependency update
           helm lint . -f values-local.yaml
           helm lint . -f values-dev.yaml
           helm lint . -f values-prod.yaml

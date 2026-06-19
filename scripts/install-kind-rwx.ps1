@@ -1,4 +1,4 @@
-# RWX storage for kind (step 2.3) — reliable on Docker Desktop
+# RWX storage for kind (reliable on Docker Desktop)
 # Usage: .\scripts\install-kind-rwx.ps1
 
 $ErrorActionPreference = "Stop"

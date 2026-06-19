@@ -1,4 +1,4 @@
-# Dev environment — kind cluster wp-dev (free cloud simulation)
+# Dev environment values (kind cluster wp-dev, cloud simulation)
 
 replicaCount: 2
 
@@ -6,9 +6,6 @@ image:
   repository: wordpress-devops
   tag: dev
   pullPolicy: Never
-
-mariadb:
-  enabled: false
 
 standaloneMariadb:
   enabled: true

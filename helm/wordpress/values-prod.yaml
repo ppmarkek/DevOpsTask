@@ -1,4 +1,4 @@
-# Prod environment — kind cluster wp-prod (free production simulation)
+# Prod environment values (kind cluster wp-prod, production simulation)
 
 replicaCount: 3
 
@@ -6,9 +6,6 @@ image:
   repository: wordpress-devops
   tag: prod
   pullPolicy: Never
-
-mariadb:
-  enabled: false
 
 standaloneMariadb:
   enabled: true

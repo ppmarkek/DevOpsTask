@@ -5,9 +5,6 @@ image:
   tag: local
   pullPolicy: Never
 
-mariadb:
-  enabled: false
-
 standaloneMariadb:
   enabled: true
   image: mariadb:11

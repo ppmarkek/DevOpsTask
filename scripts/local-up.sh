@@ -32,7 +32,6 @@ echo "==> Installing shared storage (RWX for kind)..."
 bash "$ROOT_DIR/scripts/install-kind-rwx.sh"
 
 echo "==> Updating Helm dependencies..."
-helm dependency update "$CHART_DIR"
 
 if helm status "$RELEASE_NAME" -n "$NAMESPACE" &>/dev/null; then
   echo "==> Upgrading WordPress release..."

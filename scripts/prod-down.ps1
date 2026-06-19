@@ -1,4 +1,4 @@
-# Stop prod environment — Windows PowerShell
+# Stop prod environment (Windows PowerShell)
 # Usage: .\scripts\prod-down.ps1
 
 $ClusterName = "wp-prod"

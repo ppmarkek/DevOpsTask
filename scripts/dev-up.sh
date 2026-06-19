@@ -32,7 +32,6 @@ kubectl wait --namespace ingress-nginx \
 
 bash "$ROOT_DIR/scripts/install-kind-rwx.sh"
 
-helm dependency update "$CHART_DIR"
 if helm status "$RELEASE_NAME" &>/dev/null; then
   helm upgrade "$RELEASE_NAME" "$CHART_DIR" -f "$CHART_DIR/values-dev.yaml"
 else

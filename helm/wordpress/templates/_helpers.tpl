@@ -40,6 +40,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Values.standaloneMariadb.enabled }}
 {{- .Values.standaloneMariadb.password }}
 {{- else }}
-{{- .Values.wordpress.db.password | default .Values.mariadb.auth.password }}
+{{- .Values.wordpress.db.password }}
 {{- end }}
 {{- end }}

@@ -38,11 +38,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "wordpress.fullname" . }}
                   key: WP_ENV
-            - name: WP_DEBUG
+            - name: WORDPRESS_DEBUG
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "wordpress.fullname" . }}
-                  key: WP_DEBUG
+                  key: WORDPRESS_DEBUG
           {{- if .Values.persistence.enabled }}
           volumeMounts:
             - name: uploads

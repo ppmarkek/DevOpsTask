@@ -1,4 +1,4 @@
-# Stop local environment — Windows PowerShell
+# Stop local environment (Windows PowerShell)
 # Usage: .\scripts\local-down.ps1
 
 $ClusterName = "devops-wp"

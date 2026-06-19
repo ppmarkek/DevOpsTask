@@ -6,4 +6,4 @@ metadata:
     {{- include "wordpress.labels" . | nindent 4 }}
 data:
   WP_ENV: {{ .Values.env.WP_ENV | quote }}
-  WP_DEBUG: {{ .Values.env.WP_DEBUG | quote }}
+  WORDPRESS_DEBUG: {{ if eq (.Values.env.WP_DEBUG | toString) "true" }}"1"{{ else }}""{{ end }}

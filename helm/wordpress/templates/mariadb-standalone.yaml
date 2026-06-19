@@ -9,6 +9,24 @@ type: Opaque
 stringData:
   mariadb-root-password: {{ .Values.standaloneMariadb.rootPassword | quote }}
   mariadb-password: {{ .Values.standaloneMariadb.password | quote }}
+{{- if .Values.standaloneMariadb.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-mariadb-data
+  labels:
+    {{- include "wordpress.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.standaloneMariadb.persistence.size }}
+  {{- if .Values.standaloneMariadb.persistence.storageClass }}
+  storageClassName: {{ .Values.standaloneMariadb.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -34,6 +52,8 @@ metadata:
     app.kubernetes.io/component: mariadb
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/component: mariadb
@@ -66,6 +86,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-mariadb
                   key: mariadb-password
+          {{- if .Values.standaloneMariadb.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+          {{- end }}
           readinessProbe:
             exec:
               command:
@@ -82,4 +107,10 @@ spec:
                 - mariadb-admin ping -uroot -p"$MARIADB_ROOT_PASSWORD"
             initialDelaySeconds: 40
             periodSeconds: 10
+      {{- if .Values.standaloneMariadb.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-mariadb-data
+      {{- end }}
 {{- end }}

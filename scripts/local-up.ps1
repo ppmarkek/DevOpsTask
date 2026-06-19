@@ -1,4 +1,4 @@
-# Local environment — Windows PowerShell
+# Local environment (Windows PowerShell)
 # Usage: .\scripts\local-up.ps1
 
 $ErrorActionPreference = "Stop"
@@ -34,7 +34,6 @@ Write-Host "==> Installing shared storage (RWX for kind)..."
 & (Join-Path $RootDir "scripts\install-kind-rwx.ps1")
 
 Write-Host "==> Helm install/upgrade..."
-helm dependency update $ChartDir
 $releaseExists = helm list -n default -q 2>$null | Where-Object { $_ -eq $ReleaseName }
 if ($releaseExists) {
     helm upgrade $ReleaseName $ChartDir -f (Join-Path $ChartDir "values-local.yaml")
