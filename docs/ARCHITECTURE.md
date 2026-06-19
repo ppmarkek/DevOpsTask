@@ -6,7 +6,7 @@
 |---|---|---|
 | **Local** | kind `devops-wp` | http://wordpress.local |
 | **Dev** | kind `wp-dev` (simulates cloud) | http://dev.wordpress.local:8081 |
-| **Prod** | kind `wp-prod` (planned) | http://prod.wordpress.local:8082 |
+| **Prod** | kind `wp-prod` | http://prod.wordpress.local:8082 |
 
 Terraform modules in `terraform/` target **DigitalOcean** for real cloud deployment.
 
@@ -30,3 +30,11 @@ Terraform modules in `terraform/` target **DigitalOcean** for real cloud deploym
 - Image tag: `dev`
 - Ingress: `dev.wordpress.local` on host port 8081
 - `WP_ENV=development`
+
+## Prod (kind-wp-prod)
+
+- 3 replicas, HPA 3–10, PDB minAvailable 2
+- Image tag: `prod`
+- Ingress: `prod.wordpress.local` on host port 8082
+- `WP_ENV=production`, `WP_DEBUG=false`
+- Higher CPU/memory limits

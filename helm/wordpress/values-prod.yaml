@@ -1,1 +1,48 @@
-# TODO: prod overrides
+# Prod environment — kind cluster wp-prod (free production simulation)
+
+replicaCount: 3
+
+image:
+  repository: wordpress-devops
+  tag: prod
+  pullPolicy: Never
+
+mariadb:
+  enabled: false
+
+standaloneMariadb:
+  enabled: true
+  image: mariadb:11
+  rootPassword: prod-root
+  password: prod-wp
+
+ingress:
+  enabled: true
+  className: nginx
+  host: prod.wordpress.local
+
+persistence:
+  enabled: true
+  storageClass: local-rwx
+  accessMode: ReadWriteMany
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+env:
+  WP_ENV: production
+  WP_DEBUG: "false"

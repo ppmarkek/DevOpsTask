@@ -31,11 +31,22 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 .\scripts\add-hosts.ps1
 ```
 
+## Prod (kind cluster `wp-prod`)
+
+```powershell
+.\scripts\prod-up.ps1
+```
+
+Браузер: http://prod.wordpress.local:8082
+
+Остановить: `.\scripts\prod-down.ps1`
+
 ## Переключение кластеров
 
 ```powershell
 kubectl config use-context kind-devops-wp   # local
 kubectl config use-context kind-wp-dev      # dev
+kubectl config use-context kind-wp-prod     # prod
 ```
 
 ## Структура проекта

@@ -5,7 +5,8 @@ $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
 
 $entries = @(
     "127.0.0.1 wordpress.local",
-    "127.0.0.1 dev.wordpress.local"
+    "127.0.0.1 dev.wordpress.local",
+    "127.0.0.1 prod.wordpress.local"
 )
 
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -27,3 +28,4 @@ Write-Host ""
 Write-Host "Open in browser:"
 Write-Host "  Local: http://wordpress.local"
 Write-Host "  Dev:   http://dev.wordpress.local:8081"
+Write-Host "  Prod:  http://prod.wordpress.local:8082"
