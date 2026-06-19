@@ -2,35 +2,40 @@
 
 Тестовое задание: отказоустойчивый WordPress на K8s (local / dev / prod).
 
-## Local — быстрый старт
+## Local
 
-### 1. Поднять кластер (Git Bash или WSL)
-
-```bash
-bash scripts/local-up.sh
+```powershell
+.\scripts\local-up.ps1
 ```
 
-### 2. Hosts (Windows, от администратора)
+Браузер: http://wordpress.local
+
+Остановить: `.\scripts\local-down.ps1`
+
+## Dev (kind cluster `wp-dev`)
+
+```powershell
+.\scripts\dev-up.ps1
+```
+
+Браузер: http://dev.wordpress.local:8081
+
+Остановить: `.\scripts\dev-down.ps1`
+
+> Dev использует порт **8081**, чтобы работать параллельно с local (порт 80).
+
+## Hosts (от администратора)
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
 .\scripts\add-hosts.ps1
 ```
 
-Или вручную добавь в `C:\Windows\System32\drivers\etc\hosts`:
+## Переключение кластеров
 
-```
-127.0.0.1 wordpress.local
-```
-
-### 3. Браузер
-
-http://wordpress.local
-
-### Остановить
-
-```bash
-bash scripts/local-down.sh
+```powershell
+kubectl config use-context kind-devops-wp   # local
+kubectl config use-context kind-wp-dev      # dev
 ```
 
 ## Структура проекта
@@ -40,9 +45,8 @@ bash scripts/local-down.sh
 ├── docker/                # Custom WordPress image
 ├── wordpress/             # PHP code, themes, plugins, config
 ├── helm/wordpress/        # Helm chart
-├── k8s/                   # Kustomize (альтернатива Helm)
-├── terraform/             # Облачная инфраструктура
+├── terraform/             # IaC (DigitalOcean target)
 ├── argocd/                # GitOps applications
-├── scripts/               # Локальный запуск
+├── scripts/               # local-up, dev-up, prod-up
 └── docs/                  # Документация
 ```

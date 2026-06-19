@@ -1,24 +1,27 @@
-# Local environment — Windows PowerShell
-# Usage: .\scripts\local-up.ps1
+# Dev environment — Windows PowerShell
+# Usage: .\scripts\dev-up.ps1
 
 $ErrorActionPreference = "Stop"
 
-$ClusterName = "devops-wp"
-$ReleaseName = "wp"
+$ClusterName = "wp-dev"
+$ReleaseName = "wp-dev"
+$KubeContext = "kind-$ClusterName"
 $RootDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $ChartDir = Join-Path $RootDir "helm\wordpress"
-$ImageName = "wordpress-devops:local"
+$ImageName = "wordpress-devops:dev"
 
 Write-Host "==> Building Docker image..."
 docker build -t $ImageName -f (Join-Path $RootDir "docker\Dockerfile") $RootDir
 
 $clusters = kind get clusters 2>$null
 if ($clusters -notcontains $ClusterName) {
-    Write-Host "==> Creating kind cluster..."
-    kind create cluster --name $ClusterName --config (Join-Path $RootDir "scripts\kind-config.yaml")
+    Write-Host "==> Creating kind cluster '$ClusterName'..."
+    kind create cluster --name $ClusterName --config (Join-Path $RootDir "scripts\kind-config-dev.yaml")
 } else {
     Write-Host "==> Kind cluster '$ClusterName' already exists."
 }
+
+kubectl config use-context $KubeContext
 
 Write-Host "==> Loading image into kind..."
 kind load docker-image $ImageName --name $ClusterName
@@ -30,16 +33,16 @@ kubectl wait --namespace ingress-nginx `
     --selector=app.kubernetes.io/component=controller `
     --timeout=120s
 
-Write-Host "==> Installing shared storage (RWX for kind)..."
+Write-Host "==> Installing shared storage (RWX)..."
 & (Join-Path $RootDir "scripts\install-kind-rwx.ps1")
 
 Write-Host "==> Helm install/upgrade..."
 helm dependency update $ChartDir
 $releaseExists = helm list -n default -q 2>$null | Where-Object { $_ -eq $ReleaseName }
 if ($releaseExists) {
-    helm upgrade $ReleaseName $ChartDir -f (Join-Path $ChartDir "values-local.yaml")
+    helm upgrade $ReleaseName $ChartDir -f (Join-Path $ChartDir "values-dev.yaml")
 } else {
-    helm install $ReleaseName $ChartDir -f (Join-Path $ChartDir "values-local.yaml")
+    helm install $ReleaseName $ChartDir -f (Join-Path $ChartDir "values-dev.yaml")
 }
 
 Write-Host ""
@@ -48,11 +51,14 @@ kubectl get ingress
 
 Write-Host ""
 Write-Host "============================================"
-Write-Host " Next steps:"
-Write-Host " 1. Open NEW PowerShell AS ADMINISTRATOR:"
+Write-Host " Dev environment is up!"
+Write-Host ""
+Write-Host " 1. Hosts (PowerShell as Administrator):"
 Write-Host "    cd G:\DevOpsTask"
 Write-Host "    .\scripts\add-hosts.ps1"
 Write-Host ""
-Write-Host " 2. Browser: http://wordpress.local"
-Write-Host "    (no port-forward needed if kind-config ports work)"
+Write-Host " 2. Browser: http://dev.wordpress.local:8081"
+Write-Host ""
+Write-Host " Switch back to local cluster:"
+Write-Host "    kubectl config use-context kind-devops-wp"
 Write-Host "============================================"

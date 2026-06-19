@@ -1,34 +1,30 @@
-# Dev environment — DigitalOcean
+# Dev environment — kind cluster wp-dev (free cloud simulation)
 
 replicaCount: 2
 
 image:
-  repository: registry.digitalocean.com/wp-devops/wordpress
+  repository: wordpress-devops
   tag: dev
-  pullPolicy: Always
+  pullPolicy: Never
 
 mariadb:
   enabled: false
 
 standaloneMariadb:
-  enabled: false
-
-wordpress:
-  db:
-    host: ""        # set via --set or external secret after terraform apply
-    name: wordpress
-    user: wordpress
-    password: ""    # from terraform output database_password
+  enabled: true
+  image: mariadb:11
+  rootPassword: dev-root
+  password: dev-wp
 
 ingress:
   enabled: true
   className: nginx
-  host: dev.example.com   # replace with your domain
+  host: dev.wordpress.local
 
 persistence:
   enabled: true
-  storageClass: do-block-storage
-  accessMode: ReadWriteOnce   # DO Block Storage is RWO; use Spaces/S3 for shared uploads in prod
+  storageClass: local-rwx
+  accessMode: ReadWriteMany
 
 autoscaling:
   enabled: true
